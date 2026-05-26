@@ -4,12 +4,13 @@ from src.user.dtos import UserSchema,LoginSchema
 from sqlalchemy.orm import Session
 from src.user.models import UserModel
 from pwdlib import PasswordHash
+from sentence_transformers import SentenceTransformer
 import jwt
 from src.utils.settings import settings
 from datetime import datetime,timedelta
 from jwt.exceptions import InvalidTokenError
 
-
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 password_hash = PasswordHash.recommended()
 
@@ -30,11 +31,18 @@ def register(body:UserSchema, db:Session):
     
     hash_password= get_password_hash(body.password)
 
+     # Create text for embedding
+    text = f"{body.name} {body.username} {body.email}"
+
+        # Generate embedding
+    embedding = model.encode(text).tolist()
+
 
     new_user=UserModel(name=body.name,
                        username=body.username,
                        hash_password=hash_password,
-                       email=body.email
+                       email=body.email,
+                       embedding=embedding
                        )
     db.add(new_user)
     db.commit()

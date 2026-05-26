@@ -1,15 +1,28 @@
 from src.tasks.dtos import TaskSchema
+from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
 from src.tasks.models import TaskModel
 from fastapi import HTTPException
 from src.user.models import UserModel
 
+# Load embedding model once
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
 def create_task(body:TaskSchema, db:Session, user:UserModel):
+
     data=body.model_dump()
+    # Combine text for embedding
+    text = f"{data['title']} {data['description']}"
+
+    # Generate embedding vector
+
+    embedding = model.encode(text).tolist()
+
     new_task=TaskModel(title=data["title"],
                        description=data["description"],
                        is_completed=data["is_completed"],
-                       user_id=user.id
+                       user_id=user.id,
+                       embedding=embedding
                        )
     db.add(new_task)
     db.commit()
