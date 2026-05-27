@@ -175,7 +175,7 @@ def search_tasks():
 
         response = requests.get(
             f"{BASE_URL}/tasks/search_tasks",
-            params={"q": query},
+            params={"query": query},
             headers=headers
         )
 
