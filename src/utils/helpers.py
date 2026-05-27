@@ -14,7 +14,7 @@ def is_authenticated(request: Request, db: Session=Depends(get_db)):
             raise HTTPException(401, detail="You are unnathorized")
         token=token.split(" ")[-1]
 
-        data= jwt.decode(token,settings.SECRET_KEY, settings.ALGORITHM)
+        data= jwt.decode(token,settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id=data.get("_id")
         # exp_time=int(data.get("exp"))
 

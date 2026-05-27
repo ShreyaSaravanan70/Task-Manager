@@ -1,12 +1,17 @@
 from src.tasks.dtos import TaskSchema
 from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
-from src.tasks.models import TaskModel
+from src.tasks.models import TaskModel, TaskOut
 from fastapi import HTTPException
 from src.user.models import UserModel
+from src.generate_embeddings import get_embedding
+import traceback
+import numpy as np
 
-# Load embedding model once
-model = SentenceTransformer("all-MiniLM-L6-v2")
+def cosine_distance(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return 1 - np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def create_task(body:TaskSchema, db:Session, user:UserModel):
 
@@ -16,7 +21,7 @@ def create_task(body:TaskSchema, db:Session, user:UserModel):
 
     # Generate embedding vector
 
-    embedding = model.encode(text).tolist()
+    embedding = get_embedding(text)
 
     new_task=TaskModel(title=data["title"],
                        description=data["description"],
@@ -37,18 +42,40 @@ def get_tasks(db:Session, user:UserModel):
     tasks=db.query(TaskModel).filter(TaskModel.user_id==user.id).all()
     return tasks
 
-def get_one_task(task_id:int, db:Session, user:UserModel):
-    one_task:TaskModel=db.query(TaskModel).get(task_id)
-    if not one_task:
-        raise HTTPException(404, detail="Task ID is Incorrect")
+def search_tasks(query: str, db: Session, user):
 
-    if one_task.user_id!=user.id:
-        raise HTTPException(401, detail="You are not allowed to access this task")
-    
-    return one_task
+    try:
+        # 1. Convert query to embedding vector
+        query_vector = get_embedding(query)
 
+        # 2. Fetch tasks ordered by similarity
+        tasks = (
+            db.query(TaskModel)
+            .filter(TaskModel.user_id == user.id)
+            .all()
+        )
 
+        # 🔥 filter AFTER ranking
+        
+        filtered= [
+            task for task in tasks
+            if cosine_distance(task.embedding, query_vector) < 0.7
+        ]
 
+        # 3. Convert ORM objects → Pydantic models (IMPORTANT FIX)
+        return [
+            TaskOut.model_validate(task)
+            for task in filtered
+        ]
+
+    except Exception as e:
+
+        error_message = traceback.format_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=error_message
+        )
 def update_task(body:TaskSchema, task_id:int, db:Session, user:UserModel):
     one_task:TaskModel=db.query(TaskModel).get(task_id)
     if not one_task:

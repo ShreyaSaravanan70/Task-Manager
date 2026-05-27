@@ -161,33 +161,35 @@ def view_tasks():
 
 # ---------------- VIEW ONE TASK ----------------
 
-def view_one_task():
+def search_tasks():
 
-    st.header("View One Task")
+    st.header("Search Tasks")
 
-    task_id = st.number_input("Enter Task ID", step=1)
+    query = st.text_input("Type what you are looking for")
 
-    if st.button("Get Task"):
+    if st.button("Search Tasks"):
 
         headers = {
             "Authorization": f"Bearer {st.session_state.token}"
         }
 
         response = requests.get(
-            f"{BASE_URL}/tasks/one_task/{task_id}",
+            f"{BASE_URL}/tasks/search_tasks",
+            params={"q": query},
             headers=headers
         )
 
         if response.status_code == 200:
 
-            task = response.json()
-
-            st.subheader(task["title"])
-            st.write(task["description"])
-            st.write("Completed:", task["is_completed"])
+            st.write(response.json())
 
         else:
-            st.error(response.json()["detail"])
+
+            try:
+                st.error(response.json()["detail"])
+
+            except:
+                st.error(f"Error: {response.text}")
 
 
 #-----------------UPDATE TASK -----------------
@@ -269,7 +271,7 @@ def dashboard():
         [
             "Add Task",
             "View Tasks",
-            "View One Task",
+            "Search Tasks",
             "Update Task",
             "Delete Task"
         ]
@@ -281,8 +283,8 @@ def dashboard():
     elif option == "View Tasks":
         view_tasks()
 
-    elif option == "View One Task":
-        view_one_task()
+    elif option == "Search Tasks":
+        search_tasks()
 
     elif option == "Update Task":
         update_task()
