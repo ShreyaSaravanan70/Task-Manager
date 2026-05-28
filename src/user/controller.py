@@ -9,8 +9,7 @@ import jwt
 from src.utils.settings import settings
 from datetime import datetime,timedelta
 from jwt.exceptions import InvalidTokenError
-
-model = SentenceTransformer("all-MiniLM-L6-v2")
+from src.generate_embeddings import get_embedding
 
 password_hash = PasswordHash.recommended()
 
@@ -23,20 +22,18 @@ def verify_password(plain_password, hashed_password):
 def register(body:UserSchema, db:Session):
     is_user=db.query(UserModel).filter(UserModel.username==body.username).first()
     if is_user:
-        raise HTTPException(400, detail="Username already exists..")
+        raise HTTPException(status_code=400, detail="Username already exists..")
     
     is_user=db.query(UserModel).filter(UserModel.email==body.email).first()
     if is_user:
-        raise HTTPException(400, detail="Email Address already exists..")
+        raise HTTPException(status_code=400, detail="Email Address already exists..")
     
     hash_password= get_password_hash(body.password)
 
      # Create text for embedding
     text = f"{body.name} {body.username} {body.email}"
 
-        # Generate embedding
-    embedding = model.encode(text).tolist()
-
+    embedding=get_embedding(text)
 
     new_user=UserModel(name=body.name,
                        username=body.username,
@@ -52,10 +49,10 @@ def register(body:UserSchema, db:Session):
 def login_user(body:LoginSchema, db=Session):
     user=db.query(UserModel).filter(UserModel.username==body.username).first()
     if not user:
-        raise HTTPException(401, detail="Username does not exist..")
+        raise HTTPException(401, detail="Incorrect Username/Password..")
 
     if not verify_password(body.password,user.hash_password):
-        raise HTTPException(401, detail="Incorrect Password..")
+        raise HTTPException(401, detail="Incorrect Username/Password..")
     
     exp_time= datetime.now() + timedelta(minutes=settings.EXP_TIME)
     

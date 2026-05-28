@@ -1,5 +1,6 @@
 from sqlalchemy import Column,String,Integer,DateTime, Boolean
 from src.utils.db import Base
+from pgvector.sqlalchemy import Vector
 
 class UserModel(Base):
     __tablename__="user_table"
@@ -9,3 +10,4 @@ class UserModel(Base):
     username=Column(String,nullable=False)
     hash_password=Column(String,nullable=False)
     email=Column(String)
+    embedding = Column(Vector(384))
