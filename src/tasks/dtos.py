@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class TaskSchema(BaseModel):
     title:str
@@ -12,3 +12,10 @@ class TaskResponseSchema(BaseModel):
     description:str
     is_completed: bool=False
     user_id:int| None=0
+
+class TaskOut(BaseModel):
+    id: int
+    title: str
+    description: str
+
+    model_config = ConfigDict(from_attributes=True)

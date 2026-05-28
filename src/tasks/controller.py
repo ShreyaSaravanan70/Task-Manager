@@ -1,7 +1,7 @@
-from src.tasks.dtos import TaskSchema
+from src.tasks.dtos import TaskSchema, TaskOut
 from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
-from src.tasks.models import TaskModel, TaskOut
+from src.tasks.models import TaskModel
 from fastapi import HTTPException
 from src.user.models import UserModel
 from src.generate_embeddings import get_embedding
@@ -42,7 +42,7 @@ def get_tasks(db:Session, user:UserModel):
     tasks=db.query(TaskModel).filter(TaskModel.user_id==user.id).all()
     return tasks
 
-def search_tasks(query: str, db: Session, user):
+def search_tasks(query: str, db: Session, user:UserModel):
 
     try:
         # 1. Convert query to embedding vector

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer,String, Boolean,ForeignKey
 from pgvector.sqlalchemy import Vector
 from src.utils.db import Base
-from pydantic import BaseModel, ConfigDict
+
 
 
 class TaskModel(Base):
@@ -16,9 +16,3 @@ class TaskModel(Base):
     embedding = Column(Vector(384))
 
 
-class TaskOut(BaseModel):
-    id: int
-    title: str
-    description: str
-
-    model_config = ConfigDict(from_attributes=True)
